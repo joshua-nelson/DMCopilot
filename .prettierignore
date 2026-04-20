@@ -1,0 +1,12 @@
+.next
+out
+build
+node_modules
+coverage
+playwright-report
+test-results
+
+# Project planning docs (keep manual formatting)
+AGENTS.md
+DesignDocument.md
+IMPLEMENTATION_TASKS.md

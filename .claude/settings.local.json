@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(opencode --version)",
+      "WebFetch(domain:opencode.ai)",
+      "WebFetch(domain:github.com)",
+      "Bash(gh api *)",
+      "Bash(curl -s https://api.github.com/repos/VoltAgent/awesome-claude-code-subagents/contents/categories)",
+      "Bash(curl -s https://api.github.com/repos/VoltAgent/awesome-claude-code-subagents/contents/categories/09-meta-orchestration)",
+      "Bash(curl -s https://raw.githubusercontent.com/VoltAgent/awesome-claude-code-subagents/main/categories/09-meta-orchestration/agent-organizer.md)",
+      "Bash(curl -s \"https://api.github.com/repos/VoltAgent/awesome-claude-code-subagents/git/trees/main?recursive=1\")",
+      "Bash(python3 -c ' *)",
+      "Bash(curl -s https://raw.githubusercontent.com/VoltAgent/awesome-claude-code-subagents/main/categories/01-core-development/backend-developer.md)",
+      "Bash(curl -s https://raw.githubusercontent.com/VoltAgent/awesome-claude-code-subagents/main/categories/04-quality-security/code-reviewer.md)",
+      "Bash(curl -s https://raw.githubusercontent.com/VoltAgent/awesome-claude-code-subagents/main/categories/09-meta-orchestration/multi-agent-coordinator.md)",
+      "Bash(python3 *)",
+      "Bash(awk '{print NR\": \"$0}')",
+      "Bash(opencode agent *)",
+      "Bash(awk '{print $1}')",
+      "Bash(grep -v -E '^\\(orchestrator|manager\\)$')",
+      "Read(//root/.config/opencode/agents/**)",
+      "Bash(xargs sed *)",
+      "Bash(opencode models *)",
+      "Bash(grep -rc \"openai/gpt-5.2$\" ~/.config/opencode/agents/)"
+    ]
+  }
+}
