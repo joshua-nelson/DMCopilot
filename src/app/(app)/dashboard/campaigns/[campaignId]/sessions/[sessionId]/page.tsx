@@ -92,6 +92,13 @@ export default async function CampaignSessionPage({
           <Button asChild variant="ghost">
             <Link href={`/dashboard/campaigns/${campaignId}`}>Campaign</Link>
           </Button>
+          <Button asChild variant="secondary">
+            <Link
+              href={`/dashboard/campaigns/${campaignId}/sessions/${sessionId}/encounters`}
+            >
+              Combat / Encounters
+            </Link>
+          </Button>
           <Button asChild variant="outline">
             <Link href={`/dashboard/campaigns/${campaignId}/sessions`}>All sessions</Link>
           </Button>
