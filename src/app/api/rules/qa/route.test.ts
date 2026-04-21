@@ -92,9 +92,9 @@ describe("rules qa route", () => {
     );
 
     expect(rpc).toHaveBeenCalledWith("search_rules_chunks", {
-      q: "opportunity attack",
-      match_limit: 3,
-      match_offset: 0,
+      query_text: "opportunity attack",
+      query_embedding: null,
+      match_count: 3,
     });
   });
 });

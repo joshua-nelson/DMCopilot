@@ -32,6 +32,17 @@ export async function chatComplete(
       }
     : undefined;
 
+  // Extract Anthropic-style cache token counts forwarded through OpenRouter.
+  const rawUsage = completion.usage as unknown as Record<string, unknown> | undefined;
+  const cacheReadInputTokens =
+    typeof rawUsage?.cache_read_input_tokens === "number"
+      ? rawUsage.cache_read_input_tokens
+      : undefined;
+  const cacheCreationInputTokens =
+    typeof rawUsage?.cache_creation_input_tokens === "number"
+      ? rawUsage.cache_creation_input_tokens
+      : undefined;
+
   await trackAICall({
     clerkUserId: input.clerkUserId,
     feature: input.feature,
@@ -39,6 +50,8 @@ export async function chatComplete(
     model,
     inputTokens: usage?.inputTokens,
     outputTokens: usage?.outputTokens,
+    cache_read_input_tokens: cacheReadInputTokens,
+    cache_creation_input_tokens: cacheCreationInputTokens,
     // Stage 1: pricing/accounting not implemented (dev/test => 0).
     costUsd: 0,
     latencyMs,

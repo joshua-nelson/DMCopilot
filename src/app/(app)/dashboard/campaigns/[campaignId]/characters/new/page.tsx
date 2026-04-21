@@ -68,6 +68,8 @@ export default async function NewCharacterPage({
             ac: null,
             initiative_bonus: 0,
             speed: null,
+            spell_slots: {},
+            inventory: [],
           }}
         />
       </div>

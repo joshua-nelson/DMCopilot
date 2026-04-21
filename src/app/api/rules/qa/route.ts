@@ -8,6 +8,7 @@ import { chatComplete } from "@/lib/ai/chatComplete";
 import { PromptBuilder } from "@/lib/ai/prompts/builder";
 import type { Json } from "@/lib/supabase/database.types";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { embedTexts } from "@/lib/voyage/embed";
 
 const BodySchema = z.object({
   q: z.string().min(1).max(500),
@@ -64,12 +65,23 @@ export async function POST(req: Request) {
   const q = parsed.data.q.trim();
 
   try {
+    let queryEmbedding: number[] | null = null;
+    try {
+      const embeddings = await embedTexts([q]);
+      const e0 = embeddings[0];
+      queryEmbedding = Array.isArray(e0) && e0.length > 0 ? e0 : null;
+    } catch {
+      // Embeddings are optional; fall back to FTS-only.
+      queryEmbedding = null;
+    }
+
     const supabase = getSupabaseAdminClient();
     const { data: rows, error } = await supabase.rpc("search_rules_chunks", {
-      q,
-      match_limit: 3,
-      match_offset: 0,
-    });
+      query_text: q,
+      query_embedding: queryEmbedding,
+      match_count: 3,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
     if (error) {
       return NextResponse.json(
         { ok: false, error: error.message },

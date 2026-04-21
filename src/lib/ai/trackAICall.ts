@@ -10,6 +10,8 @@ export type TrackAICallInput = {
   model: string;
   inputTokens?: number;
   outputTokens?: number;
+  cache_read_input_tokens?: number;
+  cache_creation_input_tokens?: number;
   cacheHit?: boolean;
   costUsd?: number;
   latencyMs?: number;
@@ -25,13 +27,17 @@ export async function trackAICall(input: TrackAICallInput): Promise<void> {
   try {
     const supabase = getSupabaseAdminClient();
 
-    const { error } = await supabase.from("ai_calls").insert({
+    // Cast to any: Supabase generated types may lag behind SQL migrations.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from("ai_calls") as any).insert({
       clerk_user_id: input.clerkUserId,
       feature: input.feature,
       provider: input.provider,
       model: input.model,
       input_tokens: input.inputTokens ?? 0,
       output_tokens: input.outputTokens ?? 0,
+      cache_read_input_tokens: input.cache_read_input_tokens ?? null,
+      cache_creation_input_tokens: input.cache_creation_input_tokens ?? null,
       cache_hit: input.cacheHit ?? false,
       cost_usd: input.costUsd ?? 0,
       latency_ms: input.latencyMs ?? null,

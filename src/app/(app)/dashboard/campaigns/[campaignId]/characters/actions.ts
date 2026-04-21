@@ -4,13 +4,23 @@ import "server-only";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 
 import { getCampaignForUser } from "@/app/(app)/dashboard/campaigns/actions";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/lib/supabase/database.types";
 
-export type CharacterRow = Database["public"]["Tables"]["characters"]["Row"];
+export type CharacterRow = Database["public"]["Tables"]["characters"]["Row"] & {
+  // Supabase generated types may lag migrations. Keep this optional.
+  inventory?: unknown;
+};
 export type CharacterType = "pc" | "npc" | "monster";
+
+// Spell slots: keyed by spell level "1"–"9"
+export type SpellSlots = Record<string, { total: number; used: number }>;
+
+// Inventory item
+export type InventoryItem = { id: string; name: string; quantity: number; description?: string };
 
 type ActionResult<T> =
   | { ok: true; data: T }
@@ -18,6 +28,39 @@ type ActionResult<T> =
 
 const CHARACTER_SELECT =
   "id, campaign_id, name, type, is_npc, player_name, class, race, level, str, dex, con, int, wis, cha, hp_current, hp_max, ac, initiative_bonus, speed, saves, skills, features, spell_slots, conditions, portrait_url, speaker_color, voice_id, aliases, created_at, updated_at";
+
+const spellSlotsSchema: z.ZodType<SpellSlots> = z
+  .record(
+    z.string().regex(/^[1-9]$/, { message: "Spell slot level must be 1–9." }),
+    z.object({
+      total: z.number().int().min(0).max(99),
+      used: z.number().int().min(0).max(99),
+    }),
+  )
+  .superRefine((slots, ctx) => {
+    for (const [level, entry] of Object.entries(slots)) {
+      if (entry.used > entry.total) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Used spell slots cannot exceed total (level ${level}).`,
+          path: [level, "used"],
+        });
+      }
+    }
+  });
+
+const inventoryItemSchema: z.ZodType<InventoryItem> = z.object({
+  id: z.string().trim().min(1).max(80),
+  name: z.string().trim().min(1).max(120),
+  quantity: z.number().int().min(0).max(9999),
+  description: z.string().trim().max(500).optional(),
+});
+
+const inventorySchema = z.array(inventoryItemSchema).max(200);
+
+function firstZodError(error: z.ZodError) {
+  return error.issues[0]?.message ?? "Invalid input.";
+}
 
 function normalizeText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
@@ -91,7 +134,7 @@ export async function getCharacter(
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
     .from("characters")
-    .select(CHARACTER_SELECT)
+    .select("*")
     .eq("id", characterId)
     .eq("campaign_id", campaignId)
     .maybeSingle();
@@ -427,6 +470,125 @@ export async function deleteCharacter(
   return { ok: true, data: null };
 }
 
+export async function updateSpellSlots(
+  campaignId: string,
+  characterId: string,
+  spellSlots: SpellSlots,
+): Promise<ActionResult<void>> {
+  const campaign = await getCampaignForUser(campaignId);
+  if (!campaign) return { ok: false, error: "Campaign not found." };
+
+  const parsed = spellSlotsSchema.safeParse(spellSlots);
+  if (!parsed.success) return { ok: false, error: firstZodError(parsed.error) };
+
+  const supabase = getSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("characters")
+    .update({
+      spell_slots: parsed.data,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", characterId)
+    .eq("campaign_id", campaignId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return { ok: false, error: "Character not found." };
+
+  revalidatePath(`/dashboard/campaigns/${campaignId}/characters`);
+  revalidatePath(`/dashboard/campaigns/${campaignId}/characters/${characterId}`);
+  revalidatePath(`/dashboard/campaigns/${campaignId}/characters/${characterId}/edit`);
+  return { ok: true, data: undefined };
+}
+
+export async function updateInventory(
+  campaignId: string,
+  characterId: string,
+  items: InventoryItem[],
+): Promise<ActionResult<void>> {
+  const campaign = await getCampaignForUser(campaignId);
+  if (!campaign) return { ok: false, error: "Campaign not found." };
+
+  const parsed = inventorySchema.safeParse(items);
+  if (!parsed.success) return { ok: false, error: firstZodError(parsed.error) };
+
+  const supabase = getSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("characters")
+    // Supabase generated types may not include the new column yet.
+    .update(
+      {
+        inventory: parsed.data,
+        updated_at: new Date().toISOString(),
+      } as unknown as Database["public"]["Tables"]["characters"]["Update"],
+    )
+    .eq("id", characterId)
+    .eq("campaign_id", campaignId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return { ok: false, error: "Character not found." };
+
+  revalidatePath(`/dashboard/campaigns/${campaignId}/characters`);
+  revalidatePath(`/dashboard/campaigns/${campaignId}/characters/${characterId}`);
+  revalidatePath(`/dashboard/campaigns/${campaignId}/characters/${characterId}/edit`);
+  return { ok: true, data: undefined };
+}
+
+function parseSpellSlotsFromFormData(formData: FormData): SpellSlots {
+  const result: SpellSlots = {};
+
+  for (let level = 1; level <= 9; level++) {
+    const levelKey = String(level);
+    const totalRaw = parseOptionalInt(formData.get(`spell_slots_${levelKey}_total`));
+    const usedRaw = parseOptionalInt(formData.get(`spell_slots_${levelKey}_used`));
+
+    const total = Math.max(0, totalRaw ?? 0);
+    const used = Math.max(0, Math.min(usedRaw ?? 0, total));
+
+    if (total === 0 && used === 0) continue;
+    result[levelKey] = { total, used };
+  }
+
+  return result;
+}
+
+function parseInventoryFromFormData(formData: FormData): InventoryItem[] {
+  const ids = formData.getAll("inventory_id").map(normalizeText);
+  const names = formData.getAll("inventory_name").map(normalizeText);
+  const quantities = formData.getAll("inventory_quantity").map((v) => parseOptionalInt(v));
+  const descriptions = formData
+    .getAll("inventory_description")
+    .map((v) => normalizeText(v));
+
+  const maxLen = Math.max(ids.length, names.length, quantities.length, descriptions.length);
+  if (maxLen === 0) return [];
+  if (ids.length !== maxLen || names.length !== maxLen || quantities.length !== maxLen) {
+    return [];
+  }
+
+  const items: InventoryItem[] = [];
+  for (let i = 0; i < maxLen; i++) {
+    const name = (names[i] ?? "").trim();
+    if (!name.length) continue;
+
+    const id = (ids[i] ?? "").trim();
+    const quantity = quantities[i] ?? 1;
+    const description = (descriptions[i] ?? "").trim();
+
+    items.push({
+      id,
+      name,
+      quantity,
+      description: description.length ? description : undefined,
+    });
+  }
+
+  return items;
+}
+
 export type CharacterFormState = { error: string | null };
 
 export async function createCharacterFormAction(
@@ -434,6 +596,18 @@ export async function createCharacterFormAction(
   _prevState: CharacterFormState,
   formData: FormData,
 ): Promise<CharacterFormState> {
+  const spellSlots = parseSpellSlotsFromFormData(formData);
+  const spellSlotsParsed = spellSlotsSchema.safeParse(spellSlots);
+  if (!spellSlotsParsed.success) {
+    return { error: firstZodError(spellSlotsParsed.error) };
+  }
+
+  const inventory = parseInventoryFromFormData(formData);
+  const inventoryParsed = inventorySchema.safeParse(inventory);
+  if (!inventoryParsed.success) {
+    return { error: firstZodError(inventoryParsed.error) };
+  }
+
   const result = await createCharacter(campaignId, {
     name: normalizeText(formData.get("name")),
     type: (normalizeText(formData.get("type")) as CharacterType) || undefined,
@@ -455,6 +629,21 @@ export async function createCharacterFormAction(
   });
 
   if (!result.ok) return { error: result.error };
+
+  const spellRes = await updateSpellSlots(
+    campaignId,
+    result.data.id,
+    spellSlotsParsed.data,
+  );
+  if (!spellRes.ok) return { error: spellRes.error };
+
+  const invRes = await updateInventory(
+    campaignId,
+    result.data.id,
+    inventoryParsed.data,
+  );
+  if (!invRes.ok) return { error: invRes.error };
+
   redirect(`/dashboard/campaigns/${campaignId}/characters/${result.data.id}`);
 }
 
@@ -464,6 +653,18 @@ export async function updateCharacterFormAction(
   _prevState: CharacterFormState,
   formData: FormData,
 ): Promise<CharacterFormState> {
+  const spellSlots = parseSpellSlotsFromFormData(formData);
+  const spellSlotsParsed = spellSlotsSchema.safeParse(spellSlots);
+  if (!spellSlotsParsed.success) {
+    return { error: firstZodError(spellSlotsParsed.error) };
+  }
+
+  const inventory = parseInventoryFromFormData(formData);
+  const inventoryParsed = inventorySchema.safeParse(inventory);
+  if (!inventoryParsed.success) {
+    return { error: firstZodError(inventoryParsed.error) };
+  }
+
   const updates: UpdateCharacterInput = {
     name: normalizeText(formData.get("name")),
     type: normalizeText(formData.get("type")) as CharacterType,
@@ -486,6 +687,21 @@ export async function updateCharacterFormAction(
 
   const result = await updateCharacter(campaignId, characterId, updates);
   if (!result.ok) return { error: result.error };
+
+  const spellRes = await updateSpellSlots(
+    campaignId,
+    characterId,
+    spellSlotsParsed.data,
+  );
+  if (!spellRes.ok) return { error: spellRes.error };
+
+  const invRes = await updateInventory(
+    campaignId,
+    characterId,
+    inventoryParsed.data,
+  );
+  if (!invRes.ok) return { error: invRes.error };
+
   redirect(`/dashboard/campaigns/${campaignId}/characters/${characterId}`);
 }
 

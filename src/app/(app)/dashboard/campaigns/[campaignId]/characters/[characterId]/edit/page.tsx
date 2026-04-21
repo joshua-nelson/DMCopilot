@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { notFound, redirect } from "next/navigation";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { getUserProfileByClerkUserId } from "@/lib/user-profiles";
@@ -10,6 +11,8 @@ import { DeleteCharacterForm } from "@/app/(app)/dashboard/campaigns/[campaignId
 import {
   getCharacter,
   type CharacterType,
+  type InventoryItem,
+  type SpellSlots,
 } from "@/app/(app)/dashboard/campaigns/[campaignId]/characters/actions";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +20,36 @@ export const dynamic = "force-dynamic";
 function coerceType(value: string): CharacterType {
   if (value === "pc" || value === "npc" || value === "monster") return value;
   return "pc";
+}
+
+const spellSlotsSchema: z.ZodType<SpellSlots> = z.record(
+  z.string(),
+  z.object({ total: z.number(), used: z.number() }),
+);
+
+const inventorySchema = z.array(
+  z.object({
+    id: z.string(),
+    name: z.string(),
+    quantity: z.number(),
+    description: z.string().optional().nullable(),
+  }),
+);
+
+function parseSpellSlots(value: unknown): SpellSlots {
+  const parsed = spellSlotsSchema.safeParse(value);
+  return parsed.success ? parsed.data : {};
+}
+
+function parseInventory(value: unknown): InventoryItem[] {
+  const parsed = inventorySchema.safeParse(value);
+  if (!parsed.success) return [];
+  return parsed.data.map((i) => ({
+    id: i.id,
+    name: i.name,
+    quantity: i.quantity,
+    description: i.description ?? undefined,
+  }));
 }
 
 export default async function EditCharacterPage({
@@ -87,6 +120,8 @@ export default async function EditCharacterPage({
             ac: character.ac,
             initiative_bonus: character.initiative_bonus ?? 0,
             speed: character.speed,
+            spell_slots: parseSpellSlots(character.spell_slots),
+            inventory: parseInventory(character.inventory),
           }}
         />
       </div>

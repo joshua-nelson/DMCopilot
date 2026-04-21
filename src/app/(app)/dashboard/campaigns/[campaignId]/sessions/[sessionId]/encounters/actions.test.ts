@@ -114,7 +114,10 @@ describe("encounters server actions", () => {
         character_id: "char_a",
         name: "Alice",
         initiative: 15,
-        conditions: ["prone"],
+        conditions: [{ name: "prone", duration: null }],
+        temp_hp: 0,
+        concentration_spell: null,
+        hp_visible: true,
         hp_current: 7,
         hp_max: 10,
         ac: 14,
@@ -124,6 +127,9 @@ describe("encounters server actions", () => {
         name: "Bob",
         initiative: 10,
         conditions: [],
+        temp_hp: 0,
+        concentration_spell: null,
+        hp_visible: true,
         hp_current: null,
         hp_max: null,
         ac: 12,
@@ -323,10 +329,8 @@ describe("encounters server actions", () => {
     queue("encounters", { data: { id: "enc_1" }, error: null });
 
     const res = await setParticipantConditions("camp_1", "sess_1", "enc_1", "b", [
-      " poisoned ",
-      "",
-      "  ",
-      "blinded",
+      { name: "poisoned", duration: null },
+      { name: "blinded", duration: null },
     ]);
     expect(res).toEqual({ ok: true, data: null });
 
@@ -340,7 +344,10 @@ describe("encounters server actions", () => {
     const b = asArray(updatePayload.participants)
       .map((p) => asRecord(p))
       .find((p) => p.character_id === "b");
-    expect(b?.conditions).toEqual(["poisoned", "blinded"]);
+    expect(b?.conditions).toEqual([
+      { name: "poisoned", duration: null },
+      { name: "blinded", duration: null },
+    ]);
   });
 
   it("adjustCharacterHp clamps between 0 and max and scopes by campaign_id", async () => {
@@ -377,6 +384,12 @@ describe("encounters server actions", () => {
 
   it("endEncounter scopes update by id + campaign_id + session_id", async () => {
     queue("sessions", { data: { id: "sess_1" }, error: null });
+    // Pre-read for summary computation
+    queue("encounters", {
+      data: { id: "enc_1", participants: [], round: 3 },
+      error: null,
+    });
+    // Update to completed
     queue("encounters", { data: { id: "enc_1" }, error: null });
 
     const res = await endEncounter("camp_1", "sess_1", "enc_1");

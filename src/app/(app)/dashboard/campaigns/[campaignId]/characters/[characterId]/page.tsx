@@ -2,6 +2,7 @@ import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { getUserProfileByClerkUserId } from "@/lib/user-profiles";
@@ -10,6 +11,8 @@ import {
   getCharacter,
   type CharacterRow,
   type CharacterType,
+  type InventoryItem,
+  type SpellSlots,
 } from "@/app/(app)/dashboard/campaigns/[campaignId]/characters/actions";
 
 export const dynamic = "force-dynamic";
@@ -39,6 +42,36 @@ function renderStat(label: string, value: ReactNode) {
   );
 }
 
+const spellSlotsSchema: z.ZodType<SpellSlots> = z.record(
+  z.string(),
+  z.object({ total: z.number(), used: z.number() }),
+);
+
+const inventorySchema = z.array(
+  z.object({
+    id: z.string(),
+    name: z.string(),
+    quantity: z.number(),
+    description: z.string().optional().nullable(),
+  }),
+);
+
+function parseSpellSlots(value: unknown): SpellSlots {
+  const parsed = spellSlotsSchema.safeParse(value);
+  return parsed.success ? parsed.data : {};
+}
+
+function parseInventory(value: unknown): InventoryItem[] {
+  const parsed = inventorySchema.safeParse(value);
+  if (!parsed.success) return [];
+  return parsed.data.map((i) => ({
+    id: i.id,
+    name: i.name,
+    quantity: i.quantity,
+    description: i.description ?? undefined,
+  }));
+}
+
 export default async function CharacterViewPage({
   params,
 }: {
@@ -58,6 +91,11 @@ export default async function CharacterViewPage({
   if (!character) notFound();
 
   const type = coerceType(character.type);
+  const spellSlots = parseSpellSlots(character.spell_slots);
+  const inventory = parseInventory(character.inventory);
+  const spellLevels = Array.from({ length: 9 })
+    .map((_, idx) => String(idx + 1))
+    .filter((level) => (spellSlots[level]?.total ?? 0) > 0);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -118,6 +156,74 @@ export default async function CharacterViewPage({
             {renderStat("WIS", character.wis)}
             {renderStat("CHA", character.cha)}
           </div>
+        </div>
+
+        {spellLevels.length ? (
+          <div className="mt-6">
+            <div className="text-sm font-medium">Spell slots</div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              {spellLevels.map((level) => {
+                const entry = spellSlots[level];
+                const total = entry?.total ?? 0;
+                const used = Math.max(0, Math.min(entry?.used ?? 0, total));
+                return (
+                  <div
+                    key={level}
+                    className="flex items-center justify-between gap-3 rounded-md border bg-muted/10 px-3 py-2"
+                  >
+                    <div className="text-xs font-medium text-muted-foreground">
+                      Level {level}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1">
+                      {Array.from({ length: total }).map((_, idx) => (
+                        <span
+                          key={idx}
+                          className={
+                            "inline-block size-2 rounded-full " +
+                            (idx < used
+                              ? "bg-foreground/80"
+                              : "border border-muted-foreground/40")
+                          }
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="mt-6">
+          <div className="text-sm font-medium">Inventory</div>
+          {inventory.length ? (
+            <div className="mt-3 overflow-x-auto rounded-md border">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/20 text-xs text-muted-foreground">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium">Item</th>
+                    <th className="px-3 py-2 text-right font-medium">Qty</th>
+                    <th className="px-3 py-2 text-left font-medium">Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {inventory.map((item) => (
+                    <tr key={item.id} className="border-t">
+                      <td className="px-3 py-2 font-medium">{item.name}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">
+                        {item.quantity}
+                      </td>
+                      <td className="px-3 py-2 text-muted-foreground">
+                        {item.description?.length ? item.description : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="mt-3 text-sm text-muted-foreground">No items.</div>
+          )}
         </div>
       </div>
     </div>

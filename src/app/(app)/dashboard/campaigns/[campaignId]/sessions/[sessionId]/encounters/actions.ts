@@ -23,11 +23,19 @@ const ENCOUNTER_SELECT =
 const CHARACTER_COMBAT_SELECT =
   "id, campaign_id, name, hp_current, hp_max, ac, initiative_bonus";
 
+export type Condition = {
+  name: string;
+  duration: number | null;
+};
+
 export type EncounterParticipant = {
   character_id: string;
   name: string;
   initiative: number;
-  conditions: string[];
+  conditions: Condition[];
+  temp_hp: number;
+  concentration_spell: string | null;
+  hp_visible: boolean;
 };
 
 export type EncounterParticipantView = EncounterParticipant & {
@@ -64,6 +72,26 @@ function sortParticipants(participants: EncounterParticipant[]) {
   });
 }
 
+function coerceConditions(raw: unknown): Condition[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((item) => item !== null && item !== undefined)
+    .map((item): Condition | null => {
+      if (typeof item === "string" && item.trim().length > 0) {
+        return { name: item.trim(), duration: null };
+      }
+      if (typeof item === "object") {
+        const rec = item as Record<string, unknown>;
+        const name = typeof rec.name === "string" ? rec.name.trim() : null;
+        if (!name) return null;
+        const dur = typeof rec.duration === "number" ? rec.duration : null;
+        return { name, duration: dur };
+      }
+      return null;
+    })
+    .filter((c): c is Condition => c !== null);
+}
+
 function parseParticipants(raw: unknown): EncounterParticipant[] {
   if (!Array.isArray(raw)) return [];
 
@@ -74,7 +102,6 @@ function parseParticipants(raw: unknown): EncounterParticipant[] {
     const character_id = rec.character_id;
     const name = rec.name;
     const initiative = rec.initiative;
-    const conditions = rec.conditions;
 
     if (!isNonEmptyString(character_id)) continue;
     if (!isNonEmptyString(name)) continue;
@@ -85,20 +112,32 @@ function parseParticipants(raw: unknown): EncounterParticipant[] {
       character_id: character_id.trim(),
       name: name.trim(),
       initiative: init,
-      conditions: Array.isArray(conditions)
-        ? conditions.filter(isNonEmptyString).map((c) => c.trim())
-        : [],
+      conditions: coerceConditions(rec.conditions),
+      temp_hp: typeof rec.temp_hp === "number" ? rec.temp_hp : 0,
+      concentration_spell: typeof rec.concentration_spell === "string" ? rec.concentration_spell : null,
+      hp_visible: typeof rec.hp_visible === "boolean" ? rec.hp_visible : true,
     });
   }
   return out;
 }
 
-function parseConditionsInput(raw: unknown): string[] {
+function parseConditionsInput(raw: unknown): Condition[] {
   if (typeof raw !== "string") return [];
   return raw
     .split(",")
     .map((s) => s.trim())
-    .filter((s) => s.length > 0);
+    .filter((s) => s.length > 0)
+    .map((s): Condition => {
+      const colonIdx = s.lastIndexOf(":");
+      if (colonIdx > 0) {
+        const name = s.slice(0, colonIdx).trim();
+        const dur = parseInt(s.slice(colonIdx + 1).trim(), 10);
+        if (name.length > 0 && Number.isFinite(dur) && dur > 0) {
+          return { name, duration: dur };
+        }
+      }
+      return { name: s, duration: null };
+    });
 }
 
 async function ensureCampaignAndSession(
@@ -254,6 +293,9 @@ export async function startEncounter(
       name: c.name,
       initiative,
       conditions: [],
+      temp_hp: 0,
+      concentration_spell: null,
+      hp_visible: true,
     };
   });
 
@@ -404,11 +446,22 @@ export async function nextTurn(
   const wraps = nextIdx >= participants.length;
   const newIdx = wraps ? 0 : nextIdx;
   const newRound = (asInt(encounter.round) ?? 1) + (wraps ? 1 : 0);
+
+  // On round wrap: decrement condition durations and remove expired ones.
+  const updatedParticipants = wraps
+    ? participants.map((p) => ({
+        ...p,
+        conditions: p.conditions
+          .map((c) => (c.duration !== null ? { ...c, duration: c.duration - 1 } : c))
+          .filter((c) => c.duration === null || c.duration > 0),
+      }))
+    : participants;
+
   const now = new Date().toISOString();
 
   const { data: updated, error: updateError } = await supabase
     .from("encounters")
-    .update({ active_turn_idx: newIdx, round: newRound, updated_at: now })
+    .update({ participants: updatedParticipants, active_turn_idx: newIdx, round: newRound, updated_at: now })
     .eq("id", encounterId)
     .eq("campaign_id", campaignId)
     .eq("session_id", sessionId)
@@ -559,7 +612,7 @@ export async function setParticipantConditions(
   sessionId: string,
   encounterId: string,
   characterId: string,
-  conditions: string[],
+  conditions: Condition[],
 ): Promise<ActionResult<null>> {
   const verified = await ensureCampaignAndSession(campaignId, sessionId);
   if (!verified.ok) return verified;
@@ -583,7 +636,7 @@ export async function setParticipantConditions(
 
   participants[idx] = {
     ...participants[idx],
-    conditions: (conditions ?? []).filter(isNonEmptyString).map((c) => c.trim()),
+    conditions: (conditions ?? []).filter((c) => isNonEmptyString(c.name)),
   };
 
   const now = new Date().toISOString();
@@ -702,11 +755,58 @@ export async function endEncounter(
   if (!verified.ok) return verified;
 
   const supabase = getSupabaseAdminClient();
+
+  // Read encounter to compute summary before marking complete.
+  const { data: encounter, error: readError } = await supabase
+    .from("encounters")
+    .select("participants, round")
+    .eq("id", encounterId)
+    .eq("campaign_id", campaignId)
+    .eq("session_id", sessionId)
+    .maybeSingle();
+
+  if (readError) throw readError;
+  if (!encounter) return { ok: false, error: "Encounter not found." };
+
+  const participants = parseParticipants(encounter.participants);
+  const characterIds = participants.map((p) => p.character_id);
+
+  let summary_json: Record<string, unknown> = {
+    rounds_elapsed: asInt(encounter.round) ?? 0,
+    knocked_out: [],
+    total_damage_dealt: 0,
+  };
+
+  if (characterIds.length) {
+    const { data: chars } = await supabase
+      .from("characters")
+      .select("id, name, hp_current, hp_max")
+      .eq("campaign_id", campaignId)
+      .in("id", characterIds);
+
+    if (chars) {
+      const knockedOut: string[] = [];
+      let totalDamage = 0;
+      for (const c of chars) {
+        const cur = asInt(c.hp_current) ?? 0;
+        const max = asInt(c.hp_max) ?? 0;
+        if (cur === 0) knockedOut.push(c.name);
+        if (max > 0) totalDamage += Math.max(0, max - cur);
+      }
+      summary_json = {
+        rounds_elapsed: asInt(encounter.round) ?? 0,
+        knocked_out: knockedOut,
+        total_damage_dealt: totalDamage,
+      };
+    }
+  }
+
   const now = new Date().toISOString();
 
   const { data, error } = await supabase
     .from("encounters")
-    .update({ status: "completed", updated_at: now })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .update({ status: "completed", summary_json, updated_at: now } as any)
     .eq("id", encounterId)
     .eq("campaign_id", campaignId)
     .eq("session_id", sessionId)
@@ -809,5 +909,199 @@ export async function adjustCharacterHpFormAction(
 ): Promise<void> {
   void _formData;
   const result = await adjustCharacterHp(campaignId, characterId, delta);
+  if (!result.ok) throw new Error(result.error);
+}
+
+// ── New: Temp HP ─────────────────────────────────────────────────────────────
+
+export async function setParticipantTempHp(
+  campaignId: string,
+  sessionId: string,
+  encounterId: string,
+  characterId: string,
+  tempHp: number,
+): Promise<ActionResult<null>> {
+  const verified = await ensureCampaignAndSession(campaignId, sessionId);
+  if (!verified.ok) return verified;
+  if (!isNonEmptyString(characterId)) return { ok: false, error: "Invalid character." };
+
+  const hp = Math.max(0, asInt(tempHp) ?? 0);
+
+  const supabase = getSupabaseAdminClient();
+  const { data: encounter, error } = await supabase
+    .from("encounters")
+    .select("participants")
+    .eq("id", encounterId)
+    .eq("campaign_id", campaignId)
+    .eq("session_id", sessionId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!encounter) return { ok: false, error: "Encounter not found." };
+
+  const participants = parseParticipants(encounter.participants);
+  const idx = participants.findIndex((p) => p.character_id === characterId);
+  if (idx === -1) return { ok: false, error: "Participant not found." };
+
+  participants[idx] = { ...participants[idx], temp_hp: hp };
+
+  const now = new Date().toISOString();
+  const { data: updated, error: updateError } = await supabase
+    .from("encounters")
+    .update({ participants, updated_at: now })
+    .eq("id", encounterId)
+    .eq("campaign_id", campaignId)
+    .eq("session_id", sessionId)
+    .select("id")
+    .maybeSingle();
+
+  if (updateError) throw updateError;
+  if (!updated) return { ok: false, error: "Encounter not found." };
+
+  revalidatePath(
+    `/dashboard/campaigns/${campaignId}/sessions/${sessionId}/encounters/${encounterId}`,
+  );
+  return { ok: true, data: null };
+}
+
+export async function setParticipantTempHpFormAction(
+  campaignId: string,
+  sessionId: string,
+  encounterId: string,
+  characterId: string,
+  formData: FormData,
+): Promise<void> {
+  const raw = formData.get("temp_hp");
+  const hp = asInt(raw) ?? 0;
+  const result = await setParticipantTempHp(campaignId, sessionId, encounterId, characterId, hp);
+  if (!result.ok) throw new Error(result.error);
+}
+
+// ── New: Concentration ────────────────────────────────────────────────────────
+
+export async function setParticipantConcentrationSpell(
+  campaignId: string,
+  sessionId: string,
+  encounterId: string,
+  characterId: string,
+  spellName: string | null,
+): Promise<ActionResult<null>> {
+  const verified = await ensureCampaignAndSession(campaignId, sessionId);
+  if (!verified.ok) return verified;
+  if (!isNonEmptyString(characterId)) return { ok: false, error: "Invalid character." };
+
+  const supabase = getSupabaseAdminClient();
+  const { data: encounter, error } = await supabase
+    .from("encounters")
+    .select("participants")
+    .eq("id", encounterId)
+    .eq("campaign_id", campaignId)
+    .eq("session_id", sessionId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!encounter) return { ok: false, error: "Encounter not found." };
+
+  const participants = parseParticipants(encounter.participants);
+  const idx = participants.findIndex((p) => p.character_id === characterId);
+  if (idx === -1) return { ok: false, error: "Participant not found." };
+
+  participants[idx] = {
+    ...participants[idx],
+    concentration_spell: spellName && spellName.trim().length > 0 ? spellName.trim() : null,
+  };
+
+  const now = new Date().toISOString();
+  const { data: updated, error: updateError } = await supabase
+    .from("encounters")
+    .update({ participants, updated_at: now })
+    .eq("id", encounterId)
+    .eq("campaign_id", campaignId)
+    .eq("session_id", sessionId)
+    .select("id")
+    .maybeSingle();
+
+  if (updateError) throw updateError;
+  if (!updated) return { ok: false, error: "Encounter not found." };
+
+  revalidatePath(
+    `/dashboard/campaigns/${campaignId}/sessions/${sessionId}/encounters/${encounterId}`,
+  );
+  return { ok: true, data: null };
+}
+
+export async function setParticipantConcentrationSpellFormAction(
+  campaignId: string,
+  sessionId: string,
+  encounterId: string,
+  characterId: string,
+  formData: FormData,
+): Promise<void> {
+  const raw = formData.get("concentration_spell");
+  const spell = typeof raw === "string" ? raw.trim() || null : null;
+  const result = await setParticipantConcentrationSpell(campaignId, sessionId, encounterId, characterId, spell);
+  if (!result.ok) throw new Error(result.error);
+}
+
+// ── New: HP Visibility ────────────────────────────────────────────────────────
+
+export async function setParticipantHpVisible(
+  campaignId: string,
+  sessionId: string,
+  encounterId: string,
+  characterId: string,
+  visible: boolean,
+): Promise<ActionResult<null>> {
+  const verified = await ensureCampaignAndSession(campaignId, sessionId);
+  if (!verified.ok) return verified;
+  if (!isNonEmptyString(characterId)) return { ok: false, error: "Invalid character." };
+
+  const supabase = getSupabaseAdminClient();
+  const { data: encounter, error } = await supabase
+    .from("encounters")
+    .select("participants")
+    .eq("id", encounterId)
+    .eq("campaign_id", campaignId)
+    .eq("session_id", sessionId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!encounter) return { ok: false, error: "Encounter not found." };
+
+  const participants = parseParticipants(encounter.participants);
+  const idx = participants.findIndex((p) => p.character_id === characterId);
+  if (idx === -1) return { ok: false, error: "Participant not found." };
+
+  participants[idx] = { ...participants[idx], hp_visible: visible };
+
+  const now = new Date().toISOString();
+  const { data: updated, error: updateError } = await supabase
+    .from("encounters")
+    .update({ participants, updated_at: now })
+    .eq("id", encounterId)
+    .eq("campaign_id", campaignId)
+    .eq("session_id", sessionId)
+    .select("id")
+    .maybeSingle();
+
+  if (updateError) throw updateError;
+  if (!updated) return { ok: false, error: "Encounter not found." };
+
+  revalidatePath(
+    `/dashboard/campaigns/${campaignId}/sessions/${sessionId}/encounters/${encounterId}`,
+  );
+  return { ok: true, data: null };
+}
+
+export async function setParticipantHpVisibleFormAction(
+  campaignId: string,
+  sessionId: string,
+  encounterId: string,
+  characterId: string,
+  visible: boolean,
+  _formData: FormData,
+): Promise<void> {
+  void _formData;
+  const result = await setParticipantHpVisible(campaignId, sessionId, encounterId, characterId, visible);
   if (!result.ok) throw new Error(result.error);
 }

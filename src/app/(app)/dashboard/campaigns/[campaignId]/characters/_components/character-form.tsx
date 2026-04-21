@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useActionState } from "react";
+import { PlusIcon, Trash2Icon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -10,6 +11,8 @@ import {
   updateCharacterFormAction,
   type CharacterFormState,
   type CharacterType,
+  type InventoryItem,
+  type SpellSlots,
 } from "@/app/(app)/dashboard/campaigns/[campaignId]/characters/actions";
 
 type CharacterFormValues = {
@@ -30,6 +33,8 @@ type CharacterFormValues = {
   ac: number | null;
   initiative_bonus: number;
   speed: number | null;
+  spell_slots: SpellSlots;
+  inventory: InventoryItem[];
 };
 
 const initialState: CharacterFormState = { error: null };
@@ -39,6 +44,12 @@ const inputClassName =
 
 function numberDefault(value: number | null | undefined) {
   return value === null || value === undefined ? "" : value;
+}
+
+function newInventoryId() {
+  const id = globalThis.crypto?.randomUUID?.();
+  if (typeof id === "string" && id.length) return id;
+  return `inv_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
 
 export function CharacterForm(props: {
@@ -58,6 +69,10 @@ export function CharacterForm(props: {
         );
 
   const [state, formAction, pending] = useActionState(action, initialState);
+
+  const [inventoryRows, setInventoryRows] = React.useState<InventoryItem[]>(
+    props.initialValues.inventory,
+  );
 
   return (
     <div className="space-y-6">
@@ -267,6 +282,141 @@ export function CharacterForm(props: {
           </div>
         </div>
 
+        <div className="rounded-lg border bg-card p-4 text-card-foreground">
+          <div className="text-sm font-medium">Spell Slots</div>
+          <div className="mt-3 grid gap-4 sm:grid-cols-3">
+            {Array.from({ length: 9 }).map((_, idx) => {
+              const level = String(idx + 1);
+              const current = props.initialValues.spell_slots[level] ?? { total: 0, used: 0 };
+              return (
+                <div key={level} className="space-y-2">
+                  <label
+                    htmlFor={`spell_slots_${level}_total`}
+                    className="text-xs font-medium text-muted-foreground"
+                  >
+                    Level {level}
+                  </label>
+                  <input
+                    id={`spell_slots_${level}_total`}
+                    name={`spell_slots_${level}_total`}
+                    type="number"
+                    min={0}
+                    max={99}
+                    defaultValue={current.total}
+                    className={inputClassName}
+                  />
+                  <input
+                    type="hidden"
+                    name={`spell_slots_${level}_used`}
+                    defaultValue={current.used}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="rounded-lg border bg-card p-4 text-card-foreground">
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-sm font-medium">Inventory</div>
+            <Button
+              type="button"
+              variant="outline"
+              className="gap-2"
+              onClick={() =>
+                setInventoryRows((prev) => [
+                  ...prev,
+                  { id: newInventoryId(), name: "", quantity: 1, description: "" },
+                ])
+              }
+            >
+              <PlusIcon className="size-4" />
+              Add item
+            </Button>
+          </div>
+
+          {inventoryRows.length ? (
+            <div className="mt-3 space-y-3">
+              {inventoryRows.map((item, idx) => (
+                <div
+                  key={item.id}
+                  className="grid gap-3 rounded-md border bg-muted/10 p-3 sm:grid-cols-12 sm:items-end"
+                >
+                  <input type="hidden" name="inventory_id" defaultValue={item.id} />
+
+                  <div className="space-y-2 sm:col-span-5">
+                    <label
+                      htmlFor={`inventory_name_${idx}`}
+                      className="text-xs font-medium text-muted-foreground"
+                    >
+                      Name
+                    </label>
+                    <input
+                      id={`inventory_name_${idx}`}
+                      name="inventory_name"
+                      type="text"
+                      maxLength={120}
+                      defaultValue={item.name}
+                      className={inputClassName}
+                    />
+                  </div>
+
+                  <div className="space-y-2 sm:col-span-2">
+                    <label
+                      htmlFor={`inventory_quantity_${idx}`}
+                      className="text-xs font-medium text-muted-foreground"
+                    >
+                      Qty
+                    </label>
+                    <input
+                      id={`inventory_quantity_${idx}`}
+                      name="inventory_quantity"
+                      type="number"
+                      min={0}
+                      max={9999}
+                      defaultValue={item.quantity}
+                      className={inputClassName}
+                    />
+                  </div>
+
+                  <div className="space-y-2 sm:col-span-4">
+                    <label
+                      htmlFor={`inventory_description_${idx}`}
+                      className="text-xs font-medium text-muted-foreground"
+                    >
+                      Description
+                    </label>
+                    <input
+                      id={`inventory_description_${idx}`}
+                      name="inventory_description"
+                      type="text"
+                      maxLength={500}
+                      defaultValue={item.description ?? ""}
+                      className={inputClassName}
+                    />
+                  </div>
+
+                  <div className="flex justify-end sm:col-span-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Remove item"
+                      onClick={() =>
+                        setInventoryRows((prev) => prev.filter((r) => r.id !== item.id))
+                      }
+                    >
+                      <Trash2Icon className="size-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-3 text-sm text-muted-foreground">No items.</div>
+          )}
+        </div>
+
         <div className="flex items-center gap-3">
           <Button type="submit" disabled={pending}>
             {pending
@@ -282,12 +432,6 @@ export function CharacterForm(props: {
           </Button>
         </div>
       </form>
-
-      {props.mode === "create" ? (
-        <div className="rounded-lg border bg-muted/20 p-4 text-sm text-muted-foreground">
-          Skills, saves, spell slots, and features will be added in a later phase.
-        </div>
-      ) : null}
     </div>
   );
 }

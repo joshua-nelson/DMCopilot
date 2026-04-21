@@ -5,6 +5,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { embedTexts } from "@/lib/voyage/embed";
 
 function parsePositiveInt(value: string | null, fallback: number): number {
   if (!value) return fallback;
@@ -41,12 +42,23 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    let queryEmbedding: number[] | null = null;
+    try {
+      const embeddings = await embedTexts([q]);
+      const e0 = embeddings[0];
+      queryEmbedding = Array.isArray(e0) && e0.length > 0 ? e0 : null;
+    } catch {
+      // Embeddings are optional; fall back to FTS-only.
+      queryEmbedding = null;
+    }
+
     const supabase = getSupabaseAdminClient();
     const { data, error } = await supabase.rpc("search_rules_chunks", {
-      q,
-      match_limit: Math.min(limit, 50),
-      match_offset: offset,
-    });
+      query_text: q,
+      query_embedding: queryEmbedding,
+      match_count: Math.min(limit + offset, 50),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
 
     if (error) {
       return NextResponse.json(
@@ -55,7 +67,10 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    return NextResponse.json(data ?? [], {
+    const rows = (data ?? []) as unknown[];
+    const page = rows.slice(offset, offset + limit);
+
+    return NextResponse.json(page, {
       status: 200,
       headers: {
         "Cache-Control": "no-store",

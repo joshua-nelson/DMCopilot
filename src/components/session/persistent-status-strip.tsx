@@ -13,6 +13,13 @@ type CharacterStripRow = {
   hp_max: number | null;
   ac: number | null;
   conditions: string[];
+  str: number | null;
+  dex: number | null;
+  con: number | null;
+  int: number | null;
+  wis: number | null;
+  cha: number | null;
+  speed: number | null;
 };
 
 function isNonEmptyString(v: unknown): v is string {
@@ -46,15 +53,27 @@ function parseEncounterParticipantConditions(rawParticipants: unknown) {
 
 export async function PersistentStatusStrip({
   campaignId,
-  sessionId,
 }: {
   campaignId: string;
-  sessionId: string;
 }) {
   const campaign = await getCampaignForUser(campaignId);
   if (!campaign) return null;
 
   const supabase = getSupabaseAdminClient();
+
+  const { data: activeSession, error: activeSessionError } = await supabase
+    .from("sessions")
+    .select("id")
+    .eq("campaign_id", campaignId)
+    .eq("status", "active")
+    .order("started_at", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (activeSessionError) throw activeSessionError;
+  if (!activeSession?.id) return null;
+  const sessionId = activeSession.id;
 
   const [
     { data: characters, error: charactersError },
@@ -62,7 +81,9 @@ export async function PersistentStatusStrip({
   ] = await Promise.all([
     supabase
       .from("characters")
-      .select("id, name, hp_current, hp_max, ac, conditions")
+      .select(
+        "id, name, hp_current, hp_max, ac, conditions, str, dex, con, int, wis, cha, speed",
+      )
       .eq("campaign_id", campaignId)
       .eq("type", "pc")
       .order("created_at", { ascending: false }),
@@ -121,6 +142,13 @@ export async function PersistentStatusStrip({
               hpMax={c.hp_max}
               ac={c.ac}
               conditions={c.conditions}
+              str={c.str}
+              dex={c.dex}
+              con={c.con}
+              int={c.int}
+              wis={c.wis}
+              cha={c.cha}
+              speed={c.speed}
             />
           ))
         ) : (
