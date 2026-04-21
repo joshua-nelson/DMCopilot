@@ -57,6 +57,87 @@ export type Database = {
         };
         Relationships: [];
       };
+      campaigns: {
+        Row: {
+          id: string;
+          dm_user_id: string;
+          name: string;
+          system: string;
+          description: string | null;
+          is_archived: boolean;
+          settings_json: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          dm_user_id: string;
+          name: string;
+          system?: string;
+          description?: string | null;
+          is_archived?: boolean;
+          settings_json?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          dm_user_id?: string;
+          name?: string;
+          system?: string;
+          description?: string | null;
+          is_archived?: boolean;
+          settings_json?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      sessions: {
+        Row: {
+          id: string;
+          campaign_id: string;
+          name: string;
+          status: string;
+          phase: string;
+          started_at: string | null;
+          ended_at: string | null;
+          token_budget_used: number;
+          summary_json: Json | null;
+          notes_md: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          campaign_id: string;
+          name?: string;
+          status?: string;
+          phase?: string;
+          started_at?: string | null;
+          ended_at?: string | null;
+          token_budget_used?: number;
+          summary_json?: Json | null;
+          notes_md?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          campaign_id?: string;
+          name?: string;
+          status?: string;
+          phase?: string;
+          started_at?: string | null;
+          ended_at?: string | null;
+          token_budget_used?: number;
+          summary_json?: Json | null;
+          notes_md?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       user_profiles: {
         Row: {
           clerk_user_id: string;

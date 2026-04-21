@@ -4,6 +4,7 @@ import { UserMenu } from "@/components/auth/user-menu";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { CampaignSwitcher } from "@/app/(app)/dashboard/campaigns/_components/campaign-switcher";
 
 export default function AppLayout({
   children,
@@ -34,7 +35,10 @@ export default function AppLayout({
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="flex h-14 items-center justify-between border-b px-4">
             <div className="flex items-center gap-2">
-              <div className="text-sm font-medium">DM Copilot</div>
+              <Link href="/dashboard" className="text-sm font-medium">
+                DM Copilot
+              </Link>
+              <CampaignSwitcher />
             </div>
             <div className="flex items-center gap-2">
               <ModeToggle />
