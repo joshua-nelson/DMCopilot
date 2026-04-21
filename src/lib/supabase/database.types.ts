@@ -300,9 +300,65 @@ export type Database = {
         };
         Relationships: [];
       };
+
+      // Phase 1 / Stage 2B+ (Rules Lookup): SRD chunks + FTS
+      rules_chunks: {
+        Row: {
+          id: string;
+          campaign_id: string | null;
+          system: string;
+          source: string;
+          content: string;
+          // Embeddings are not required in Phase 1; keep type loose.
+          embedding: Json | null;
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          campaign_id?: string | null;
+          system: string;
+          source: string;
+          content: string;
+          embedding?: Json | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          campaign_id?: string | null;
+          system?: string;
+          source?: string;
+          content?: string;
+          embedding?: Json | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      search_rules_chunks: {
+        Args: {
+          q: string;
+          system_filter?: string | null;
+          source_filter?: string | null;
+          campaign_filter?: string | null;
+          match_limit?: number;
+          match_offset?: number;
+        };
+        Returns: {
+          id: string;
+          content: string;
+          metadata: Json;
+          rank: number;
+        }[];
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

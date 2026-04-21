@@ -5,6 +5,7 @@ import { ModeToggle } from "@/components/mode-toggle";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { CampaignSwitcher } from "@/app/(app)/dashboard/campaigns/_components/campaign-switcher";
+import { RulesCommandBar } from "@/components/rules/rules-command-bar";
 
 export default function AppLayout({
   children,
@@ -49,6 +50,8 @@ export default function AppLayout({
           <main className="flex-1 p-6">{children}</main>
         </div>
       </div>
+
+      <RulesCommandBar />
     </div>
   );
 }

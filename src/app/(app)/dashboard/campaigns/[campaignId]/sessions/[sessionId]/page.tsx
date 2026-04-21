@@ -13,6 +13,7 @@ import {
 import { EndSessionButton } from "@/app/(app)/dashboard/campaigns/[campaignId]/sessions/_components/end-session-button";
 import { SessionNotesEditor } from "@/app/(app)/dashboard/campaigns/[campaignId]/sessions/_components/session-notes-editor";
 import { SessionPhaseSwitcher } from "@/app/(app)/dashboard/campaigns/[campaignId]/sessions/_components/session-phase-switcher";
+import { SessionSummaryPanel } from "@/app/(app)/dashboard/campaigns/[campaignId]/sessions/_components/session-summary-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -119,6 +120,13 @@ export default async function CampaignSessionPage({
             sessionId={sessionId}
             initialNotesMd={session.notes_md ?? ""}
             disabled={!isActive}
+          />
+
+          <SessionSummaryPanel
+            campaignId={campaignId}
+            sessionId={sessionId}
+            sessionStatus={session.status}
+            initialSummaryJson={session.summary_json}
           />
 
           {isActive ? (
