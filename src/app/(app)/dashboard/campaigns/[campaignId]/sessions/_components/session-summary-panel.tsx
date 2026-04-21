@@ -167,9 +167,11 @@ export function SessionSummaryPanel({
   }
 
   return (
-    <section className="space-y-2">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-medium">Post-session summary</h2>
+    <section className="overflow-hidden rounded-[var(--radius)] border border-line-soft bg-bg-1">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line-soft px-3 py-2">
+        <h2 className="text-[11.5px] font-medium uppercase tracking-[0.06em] text-ink-1">
+          Post-session summary
+        </h2>
         {summary ? (
           <div className="flex items-center gap-2">
             {!editing ? (
@@ -190,10 +192,11 @@ export function SessionSummaryPanel({
           </div>
         ) : null}
       </div>
+      <div className="p-3.5">
 
       {!summary ? (
-        <div className="space-y-2 rounded-md border bg-background p-3">
-          <div className="text-sm text-muted-foreground">
+        <div className="space-y-3">
+          <div className="text-[12px] text-ink-2">
             {sessionStatus === "active"
               ? "You can generate a draft summary now, or after you end the session."
               : "Generate a structured summary from your notes."}
@@ -208,15 +211,15 @@ export function SessionSummaryPanel({
               {pending ? "Generating…" : sessionStatus === "active" ? "Generate draft summary" : "Generate summary"}
             </Button>
           </div>
-          {error ? <div className="text-sm text-destructive">{error}</div> : null}
+          {error ? <div className="text-[12px] text-bad">{error}</div> : null}
         </div>
       ) : editing ? (
-        <div className="space-y-2 rounded-md border bg-background p-3">
+        <div className="space-y-2">
           <textarea
             value={jsonText}
             onChange={(e) => setJsonText(e.target.value)}
             rows={16}
-            className="w-full resize-y rounded-md border bg-background px-3 py-2 font-mono text-xs shadow-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className="scrollbar-thin w-full resize-y rounded-[var(--radius-sm)] border border-line-soft bg-bg-2 px-3 py-2 font-mono text-[11.5px] text-ink-1 outline-none focus-visible:border-ember-line focus-visible:ring-2 focus-visible:ring-ember-line"
             aria-label="Edit summary JSON"
           />
           <div className="flex flex-wrap items-center gap-2">
@@ -236,10 +239,10 @@ export function SessionSummaryPanel({
               Cancel
             </Button>
           </div>
-          {error ? <div className="text-sm text-destructive">{error}</div> : null}
+          {error ? <div className="text-[12px] text-bad">{error}</div> : null}
         </div>
       ) : (
-        <div className="space-y-4 rounded-md border bg-background p-3">
+        <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <div className="text-sm font-medium">Events</div>
@@ -349,6 +352,7 @@ export function SessionSummaryPanel({
           </div>
         </div>
       )}
+      </div>
     </section>
   );
 }

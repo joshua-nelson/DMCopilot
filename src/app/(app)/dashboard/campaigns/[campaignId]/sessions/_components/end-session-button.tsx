@@ -63,26 +63,33 @@ export function EndSessionButton({
   return (
     <div className="space-y-2">
       {!confirming ? (
-        <Button type="button" variant="destructive" disabled={pending} onClick={onStart}>
+        <Button
+          type="button"
+          variant="destructive"
+          size="sm"
+          disabled={pending}
+          onClick={onStart}
+          className="w-full justify-start"
+        >
           End session
         </Button>
       ) : (
         <div
-          className="space-y-3 rounded-md border bg-background p-3"
+          className="space-y-3 rounded-[var(--radius-sm)] border border-line bg-bg-2 p-3"
           role="dialog"
           aria-label="End session confirmation"
           onKeyDown={(e) => {
             if (e.key === "Escape") onCancel();
           }}
         >
-          <div className="text-sm">
+          <div className="text-[12px] text-ink-1">
             End this session? This will mark it completed.
           </div>
 
-          <label className="flex items-start gap-2 text-sm">
+          <label className="flex items-start gap-2 text-[12px] text-ink-1">
             <input
               type="checkbox"
-              className="mt-1"
+              className="mt-0.5"
               checked={alsoGenerateSummary}
               onChange={(e) => setAlsoGenerateSummary(e.target.checked)}
               disabled={pending}
@@ -95,19 +102,26 @@ export function EndSessionButton({
               ref={confirmBtnRef}
               type="button"
               variant="destructive"
+              size="sm"
               disabled={pending}
               onClick={onConfirm}
             >
               {pending ? "Ending…" : "Confirm end"}
             </Button>
-            <Button type="button" variant="secondary" disabled={pending} onClick={onCancel}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={pending}
+              onClick={onCancel}
+            >
               Cancel
             </Button>
           </div>
         </div>
       )}
 
-      {error ? <div className="text-sm text-destructive">{error}</div> : null}
+      {error ? <div className="text-[12px] text-bad">{error}</div> : null}
     </div>
   );
 }

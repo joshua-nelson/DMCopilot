@@ -70,28 +70,37 @@ export function SessionNotesEditor({
             : "";
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between gap-3">
-        <div className="text-sm font-medium">Notes (Markdown)</div>
-        <div className="text-xs text-muted-foreground">{statusLabel}</div>
+    <section className="rounded-[var(--radius)] border border-line-soft bg-bg-1">
+      <div className="flex items-center justify-between gap-3 border-b border-line-soft px-3 py-2">
+        <div className="flex items-center gap-2 text-[11.5px] font-medium uppercase tracking-[0.06em] text-ink-1">
+          Notes
+          <span className="font-mono text-[10.5px] font-normal text-ink-3">
+            markdown
+          </span>
+        </div>
+        <div className="font-mono text-[10.5px] text-ink-3">{statusLabel}</div>
       </div>
 
-      <textarea
-        value={value}
-        onChange={(e) => {
-          setValue(e.target.value);
-          if (status !== "saving") setStatus("idle");
-        }}
-        disabled={disabled}
-        rows={18}
-        placeholder="Type session notes here…"
-        className="w-full resize-y rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-      />
+      <div className="p-3.5">
+        <textarea
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value);
+            if (status !== "saving") setStatus("idle");
+          }}
+          disabled={disabled}
+          rows={18}
+          placeholder="Type session notes here…"
+          className="scrollbar-thin w-full resize-y rounded-[var(--radius-sm)] border border-line-soft bg-bg-2 px-3 py-2.5 text-[13px] leading-relaxed text-ink-1 outline-none placeholder:text-ink-4 focus-visible:border-ember-line focus-visible:ring-2 focus-visible:ring-ember-line"
+        />
 
-      {error ? <div className="text-sm text-destructive">{error}</div> : null}
-      <div className="text-xs text-muted-foreground">
-        Autosaves after you pause typing.
+        {error ? (
+          <div className="mt-2 text-[12px] text-bad">{error}</div>
+        ) : null}
+        <div className="mt-2 font-mono text-[10.5px] text-ink-4">
+          Autosaves after you pause typing.
+        </div>
       </div>
-    </div>
+    </section>
   );
 }

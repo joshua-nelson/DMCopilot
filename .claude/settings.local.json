@@ -21,7 +21,16 @@
       "Read(//root/.config/opencode/agents/**)",
       "Bash(xargs sed *)",
       "Bash(opencode models *)",
-      "Bash(grep -rc \"openai/gpt-5.2$\" ~/.config/opencode/agents/)"
+      "Bash(grep -rc \"openai/gpt-5.2$\" ~/.config/opencode/agents/)",
+      "WebFetch(domain:api.anthropic.com)",
+      "Bash(cp /root/.claude/projects/-root-DMCopilot/62503154-c550-44c6-83d2-4b8b3e28f477/tool-results/webfetch-1776792161109-j6do7k.bin /tmp/design.gz)",
+      "Bash(gunzip -f /tmp/design.gz)",
+      "Read(//tmp/**)",
+      "Bash(mkdir -p /tmp/design-files)",
+      "Bash(tar -xf /tmp/design -C /tmp/design-files)",
+      "Bash(npx tsc *)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(npm run *)"
     ]
   }
 }

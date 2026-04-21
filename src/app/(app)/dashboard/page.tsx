@@ -28,11 +28,14 @@ export default async function DashboardPage() {
   const archivedCampaigns = campaigns.filter((c) => c.is_archived);
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="p-6">
+      <div className="mx-auto max-w-4xl">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Campaigns</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h1 className="font-heading text-[26px] font-normal tracking-tight text-ink-0 [&::first-letter]:text-ember">
+            Campaigns
+          </h1>
+          <p className="mt-1 text-sm text-ink-3">
             Create a campaign to start tracking sessions, characters, encounters,
             and notes.
           </p>
@@ -107,6 +110,7 @@ export default async function DashboardPage() {
           ) : null}
         </div>
       )}
+      </div>
     </div>
   );
 }

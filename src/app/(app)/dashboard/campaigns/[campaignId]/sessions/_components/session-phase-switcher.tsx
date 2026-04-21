@@ -3,7 +3,6 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   setSessionPhase,
@@ -54,26 +53,43 @@ export function SessionPhaseSwitcher({
   }
 
   return (
-    <div className="space-y-2">
-      <div className="text-sm font-medium">Phase</div>
-      <div className="flex flex-wrap gap-2">
+    <div className="flex flex-col items-end gap-1">
+      <div
+        role="tablist"
+        aria-label="Session phase"
+        className="inline-flex rounded-[8px] border border-line-soft bg-bg-1 p-[3px]"
+      >
         {PHASES.map((p) => {
           const active = p.value === phase;
           return (
-            <Button
+            <button
               key={p.value}
               type="button"
-              variant={active ? "default" : "outline"}
+              role="tab"
+              aria-selected={active}
               disabled={disabled || pending}
-              className={cn(active ? "" : "opacity-90")}
               onClick={() => onSelect(p.value)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-[6px] px-[11px] py-[5px] text-[12px] transition-colors",
+                active
+                  ? "bg-bg-3 text-ink-0 shadow-[inset_0_1px_0_oklch(1_0_0_/_0.03)]"
+                  : "text-ink-2 hover:text-ink-0 disabled:opacity-50",
+              )}
             >
+              <span
+                className={cn(
+                  "h-1.5 w-1.5 rounded-full",
+                  active ? "bg-ember" : "bg-ink-4",
+                )}
+              />
               {p.label}
-            </Button>
+            </button>
           );
         })}
       </div>
-      {error ? <div className="text-sm text-destructive">{error}</div> : null}
+      {error ? (
+        <div className="text-[11px] text-bad">{error}</div>
+      ) : null}
     </div>
   );
 }

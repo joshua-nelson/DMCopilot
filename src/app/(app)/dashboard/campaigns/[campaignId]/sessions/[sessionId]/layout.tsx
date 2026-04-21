@@ -14,14 +14,11 @@ export default async function CampaignSessionLayout({
   const { campaignId, sessionId } = await params;
 
   return (
-    <div className="space-y-6">
-      <div className="sticky top-0 z-20 -mx-6 -mt-6 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="px-6 py-2">
-          <PersistentStatusStrip campaignId={campaignId} sessionId={sessionId} />
-        </div>
+    <>
+      <div className="pb-[56px]">{children}</div>
+      <div className="sticky bottom-0 z-10 h-[56px] border-t border-line-soft bg-bg-1 backdrop-blur">
+        <PersistentStatusStrip campaignId={campaignId} sessionId={sessionId} />
       </div>
-
-      {children}
-    </div>
+    </>
   );
 }
