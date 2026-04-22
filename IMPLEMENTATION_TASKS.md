@@ -26,16 +26,16 @@ Goal: a deployable skeleton with auth, a database, and observability. Zero featu
 - [x] Provision Supabase project (dev + prod) `[S]`
 - [x] Provision Upstash Redis (dev + prod) `[S]`
 - [x] Document env var schema in `.env.example` + Vercel env vars `[S]`
-- [ ] Decide on Railway vs Fly.io for the Discord bot; create placeholder deploy `[M]`
+- [x] Decide on Railway vs Fly.io for the Discord bot; create placeholder deploy `[M]`
 
 ### Third-Party Accounts & API Keys
 
 - [ ] Anthropic API account, billing, organization-level rate limits confirmed `[S]` 🔑
-- [ ] Voyage AI account + API key `[S]`
-- [ ] Deepgram account + API key `[S]`
-- [ ] ElevenLabs account + voice library review `[S]`
+- [x] Voyage AI account + API key `[S]`
+- [x] Deepgram account + API key `[S]`
+- [x] ElevenLabs account + voice library review `[S]`
 - [ ] Replicate or fal.ai account for Flux image generation `[S]`
-- [ ] Discord developer application, bot token `[S]`
+- [x] Discord developer application, bot token `[S]`
 
 ### Auth
 
