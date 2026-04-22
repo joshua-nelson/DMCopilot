@@ -13,19 +13,19 @@ Goal: a deployable skeleton with auth, a database, and observability. Zero featu
 
 ### Repository & Tooling
 
-- [ ] Initialize Next.js 15 app (App Router, TypeScript, Tailwind) `[S]`
-- [ ] Install and configure shadcn/ui with a custom tavern/parchment theme `[S]`
-- [ ] Set up ESLint, Prettier, TypeScript strict mode, Husky pre-commit hooks `[S]`
-- [ ] Configure Vitest for unit tests, Playwright for E2E `[S]`
-- [ ] Create GitHub repo, branch protection rules, PR template `[S]`
-- [ ] Set up GitHub Actions for CI (lint, typecheck, test, build) `[M]`
+- [x] Initialize Next.js 15 app (App Router, TypeScript, Tailwind) `[S]`
+- [x] Install and configure shadcn/ui with a custom tavern/parchment theme `[S]`
+- [x] Set up ESLint, Prettier, TypeScript strict mode, Husky pre-commit hooks `[S]`
+- [x] Configure Vitest for unit tests, Playwright for E2E `[S]`
+- [x] Create GitHub repo, branch protection rules, PR template `[S]`
+- [x] Set up GitHub Actions for CI (lint, typecheck, test, build) `[M]`
 
 ### Hosting & Environments
 
-- [ ] Create Vercel project, connect to GitHub, configure preview deploys `[S]`
-- [ ] Provision Supabase project (dev + prod) `[S]`
-- [ ] Provision Upstash Redis (dev + prod) `[S]`
-- [ ] Document env var schema in `.env.example` + Vercel env vars `[S]`
+- [x] Create Vercel project, connect to GitHub, configure preview deploys `[S]`
+- [x] Provision Supabase project (dev + prod) `[S]`
+- [x] Provision Upstash Redis (dev + prod) `[S]`
+- [x] Document env var schema in `.env.example` + Vercel env vars `[S]`
 - [ ] Decide on Railway vs Fly.io for the Discord bot; create placeholder deploy `[M]`
 
 ### Third-Party Accounts & API Keys
@@ -39,24 +39,24 @@ Goal: a deployable skeleton with auth, a database, and observability. Zero featu
 
 ### Auth
 
-- [ ] Choose Clerk vs Supabase Auth (recommend Clerk for speed) `[S]` 🔑
-- [ ] Implement sign-up, sign-in, password reset `[M]`
-- [ ] Protected route wrapper / middleware `[S]`
-- [ ] User profile table + onboarding flow `[M]`
+- [x] Choose Clerk vs Supabase Auth (recommend Clerk for speed) `[S]` 🔑
+- [x] Implement sign-up, sign-in, password reset `[M]`
+- [x] Protected route wrapper / middleware `[S]`
+- [x] User profile table + onboarding flow `[M]`
 
 ### Observability
 
-- [ ] Sentry set up in app + source maps in CI `[S]`
-- [ ] PostHog set up for product analytics, with key events defined `[M]`
+- [x] Sentry set up in app + source maps in CI `[S]`
+- [x] PostHog set up for product analytics, with key events defined `[M]`
 - [ ] Log aggregation decision (Axiom, Logtail, or Vercel logs) `[S]`
-- [ ] Custom "AI cost" tracking table + instrumentation helper `[M]` 💰 🔑
-- [ ] Dashboard: cost per session, cache hit rate, Gate 1 elimination rate `[L]` 💰
+- [x] Custom "AI cost" tracking table + instrumentation helper `[M]` 💰 🔑
+- [x] Dashboard: cost per session, cache hit rate, Gate 1 elimination rate `[L]` 💰
 
 ### Base Layout
 
-- [ ] App shell with persistent header, sidebar, main panel `[M]`
-- [ ] Empty-state dashboard with "create your first campaign" CTA `[S]`
-- [ ] Theme toggle (dark/light) `[S]`
+- [x] App shell with persistent header, sidebar, main panel `[M]`
+- [x] Empty-state dashboard with "create your first campaign" CTA `[S]`
+- [x] Theme toggle (dark/light) `[S]`
 
 ---
 
@@ -66,106 +66,106 @@ Goal: a working DM tool for a single campaign. Character sheets, combat tracker,
 
 ### Database Schema (Supabase Postgres)
 
-- [ ] Enable `pgvector` and `pg_trgm` extensions `[S]` 🔑
-- [ ] Migration: `users`, `campaigns`, `sessions`, `characters`, `encounters`, `notes` `[M]` 🔑
-- [ ] Migration: `events`, `transcript_segments` (empty table, used in Phase 2) `[S]`
-- [ ] Migration: `memory_chunks`, `rules_chunks` with vector + tsvector cols `[M]`
-- [ ] Migration: `proper_nouns` (campaign-scoped dictionary for Gate 1) `[S]`
-- [ ] Migration: `relationships`, `handouts`, `npc_agents` (Phase 3/4/5 stubs) `[S]`
-- [ ] Row-Level Security policies: users only access their own campaigns `[M]` 🔑 ⚠️
-- [ ] Seed script with a demo campaign + characters for dev `[S]`
+- [x] Enable `pgvector` and `pg_trgm` extensions `[S]` 🔑
+- [x] Migration: `users`, `campaigns`, `sessions`, `characters`, `encounters`, `notes` `[M]` 🔑
+- [x] Migration: `events`, `transcript_segments` (empty table, used in Phase 2) `[S]`
+- [x] Migration: `memory_chunks`, `rules_chunks` with vector + tsvector cols `[M]`
+- [x] Migration: `proper_nouns` (campaign-scoped dictionary for Gate 1) `[S]`
+- [x] Migration: `relationships`, `handouts`, `npc_agents` (Phase 3/4/5 stubs) `[S]`
+- [x] Row-Level Security policies: users only access their own campaigns `[M]` 🔑 ⚠️
+- [x] Seed script with a demo campaign + characters for dev `[S]`
 
 ### Campaign Management
 
-- [ ] Campaign CRUD API (server actions) `[M]`
+- [x] Campaign CRUD API (server actions) `[M]`
 - [ ] Create campaign form: name, setting summary, tone, system (D&D 5e default) `[S]`
 - [ ] Campaign dashboard page: recent sessions, player roster, quick stats `[M]`
-- [ ] Campaign settings page (editable fields, delete confirmation) `[S]`
-- [ ] Campaign switcher in header `[S]`
+- [x] Campaign settings page (editable fields, delete confirmation) `[S]`
+- [x] Campaign switcher in header `[S]`
 
 ### Character Sheets
 
-- [ ] Design 5e-compatible character sheet JSON schema (ability scores, HP, AC, saves, skills, features, spell slots, inventory) `[L]` 🔑
+- [x] Design 5e-compatible character sheet JSON schema (ability scores, HP, AC, saves, skills, features, spell slots, inventory) `[L]` 🔑
 - [ ] Character create form with class/race basics `[L]`
 - [ ] Character sheet view (read mode) `[M]`
 - [ ] Character sheet edit mode with field-level saves `[L]`
-- [ ] Inventory management (add/remove/quantity) `[M]`
-- [ ] Spell slot tracking `[M]`
+- [x] Inventory management (add/remove/quantity) `[M]`
+- [x] Spell slot tracking `[M]`
 - [ ] Character portrait upload → R2 `[M]`
 - [ ] Roster display: card grid per campaign `[S]`
 
 ### Combat Tracker
 
-- [ ] Encounter data model: participants, round, active turn index `[S]`
-- [ ] Start combat flow: roll initiative (auto or manual), order participants `[M]` 🔑
+- [x] Encounter data model: participants, round, active turn index `[S]`
+- [x] Start combat flow: roll initiative (auto or manual), order participants `[M]` 🔑
 - [ ] Initiative list UI with current-turn highlight `[M]`
 - [ ] dnd-kit drag-to-reorder initiative `[M]`
 - [ ] HP adjust: click-to-edit with +/- buttons, keyboard shortcuts `[M]` 🔑
 - [ ] AC display + temp AC (Shield spell etc.) `[S]`
-- [ ] Condition tracker: toggle conditions per participant with duration `[M]`
-- [ ] Concentration tracking: which spell, damage triggers save prompt `[M]`
+- [x] Condition tracker: toggle conditions per participant with duration `[M]`
+- [x] Concentration tracking: which spell, damage triggers save prompt `[M]`
 - [ ] Monster stat blocks: embed SRD creatures, support custom creatures `[L]`
-- [ ] Hidden HP for monsters (DM-only) `[S]`
-- [ ] "Next turn" button advances initiative, decrements duration timers `[M]`
-- [ ] End combat flow with summary `[S]`
+- [x] Hidden HP for monsters (DM-only) `[S]`
+- [x] "Next turn" button advances initiative, decrements duration timers `[M]`
+- [x] End combat flow with summary `[S]`
 
 ### Persistent Status Strip (UI)
 
-- [ ] One-row player status component: HP bar, AC, condition icons `[M]` 🔑
+- [x] One-row player status component: HP bar, AC, condition icons `[M]` 🔑
 - [ ] Click to expand full sheet inline `[S]`
 - [ ] Visible on all DM screens regardless of phase `[S]`
 
 ### Notes
 
-- [ ] Session notes editor: markdown with autosave `[M]`
+- [x] Session notes editor: markdown with autosave `[M]`
 - [ ] Pin/flag important notes (used later by memory system) `[S]`
 - [ ] Note search within session `[S]`
 
 ### SRD 5.1 Ingestion
 
-- [ ] Download SRD 5.1 CC-BY corpus (verify source) `[S]` ⚠️
-- [ ] Parse into logical chunks (spells, rules sections, conditions, creatures, items) `[L]`
-- [ ] Embed with voyage-3-large, store in `rules_chunks` `[M]` 💰
-- [ ] Build full-text search index (tsvector + GIN) `[S]`
-- [ ] One-time ingest script, re-runnable idempotently `[M]`
-- [ ] Include source attribution in every chunk (CC-BY compliance) `[S]` ⚠️
+- [x] Download SRD 5.1 CC-BY corpus (verify source) `[S]` ⚠️
+- [x] Parse into logical chunks (spells, rules sections, conditions, creatures, items) `[L]`
+- [x] Embed with voyage-3-large, store in `rules_chunks` `[M]` 💰
+- [x] Build full-text search index (tsvector + GIN) `[S]`
+- [x] One-time ingest script, re-runnable idempotently `[M]`
+- [x] Include source attribution in every chunk (CC-BY compliance) `[S]` ⚠️
 
 ### Rules Lookup Feature
 
-- [ ] Command-bar UI (keyboard shortcut `⌘K`) `[M]`
-- [ ] Hybrid search endpoint: pgvector + tsvector + RRF merge `[L]` 🔑 💰
-- [ ] Haiku prompt for rules Q&A, reads top 3 retrieved chunks `[M]` 💰
-- [ ] Result display with citations linking to SRD chunk `[M]`
-- [ ] Recent queries list `[S]`
+- [x] Command-bar UI (keyboard shortcut `⌘K`) `[M]`
+- [x] Hybrid search endpoint: pgvector + tsvector + RRF merge `[L]` 🔑 💰
+- [x] Haiku prompt for rules Q&A, reads top 3 retrieved chunks `[M]` 💰
+- [x] Result display with citations linking to SRD chunk `[M]`
+- [x] Recent queries list `[S]`
 
 ### Session Lifecycle
 
-- [ ] Start session: creates `sessions` row, sets phase to "prep" `[S]`
-- [ ] Active session view `[M]`
-- [ ] Phase switcher (exploration / roleplay / combat / prep) `[M]`
-- [ ] End session: finalizes row, triggers post-session summary job `[S]`
+- [x] Start session: creates `sessions` row, sets phase to "prep" `[S]`
+- [x] Active session view `[M]`
+- [x] Phase switcher (exploration / roleplay / combat / prep) `[M]`
+- [x] End session: finalizes row, triggers post-session summary job `[S]`
 
 ### Fluid Panel Layout
 
-- [ ] Panel primitive: expandable, collapsible, drag-to-reorder `[L]` 🔑
-- [ ] Layout presets per phase (exploration/roleplay/combat/prep) `[M]`
-- [ ] Auto-apply preset on phase change, DM can override `[M]`
-- [ ] Save custom layouts per user `[M]`
+- [x] Panel primitive: expandable, collapsible, drag-to-reorder `[L]` 🔑
+- [x] Layout presets per phase (exploration/roleplay/combat/prep) `[M]`
+- [x] Auto-apply preset on phase change, DM can override `[M]`
+- [x] Save custom layouts per user `[M]`
 
 ### Post-Session Summary
 
-- [ ] Sonnet 4.6 prompt: consumes session notes + combat log → structured summary JSON `[L]` 💰
+- [x] Sonnet 4.6 prompt: consumes session notes + combat log → structured summary JSON `[L]` 💰
 - [ ] Submit via Anthropic Batch API (50% discount) `[M]` 💰 🔑
 - [ ] Poll for batch result, store in `sessions.summary_json` `[M]`
-- [ ] Summary display UI (events, NPCs met, loot, decisions, threads) `[M]`
-- [ ] Edit-in-place for DM corrections `[M]`
+- [x] Summary display UI (events, NPCs met, loot, decisions, threads) `[M]`
+- [x] Edit-in-place for DM corrections `[M]`
 
 ### Prompt Caching Foundation
 
-- [ ] Utility to build layered prompts (static / campaign / session / volatile) `[L]` 🔑 💰
-- [ ] `cache_control` breakpoint injection at each boundary `[M]` 💰
-- [ ] Cache hit rate metric logged to analytics `[S]` 💰
-- [ ] Unit tests for prompt layering `[M]`
+- [x] Utility to build layered prompts (static / campaign / session / volatile) `[L]` 🔑 💰
+- [x] `cache_control` breakpoint injection at each boundary `[M]` 💰
+- [x] Cache hit rate metric logged to analytics `[S]` 💰
+- [x] Unit tests for prompt layering `[M]`
 
 ---
 
