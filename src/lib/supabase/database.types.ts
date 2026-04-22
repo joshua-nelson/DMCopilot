@@ -63,6 +63,7 @@ export type Database = {
           dm_user_id: string;
           name: string;
           system: string;
+          tone: string;
           description: string | null;
           is_archived: boolean;
           settings_json: Json;
@@ -74,6 +75,7 @@ export type Database = {
           dm_user_id: string;
           name: string;
           system?: string;
+          tone?: string;
           description?: string | null;
           is_archived?: boolean;
           settings_json?: Json;
@@ -85,6 +87,7 @@ export type Database = {
           dm_user_id?: string;
           name?: string;
           system?: string;
+          tone?: string;
           description?: string | null;
           is_archived?: boolean;
           settings_json?: Json;

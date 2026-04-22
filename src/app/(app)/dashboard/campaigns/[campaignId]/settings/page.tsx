@@ -37,6 +37,7 @@ export default async function CampaignSettingsPage({
             id: campaign.id,
             name: campaign.name,
             system: campaign.system,
+            tone: campaign.tone,
             description: campaign.description,
             isArchived: campaign.is_archived,
           }}

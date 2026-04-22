@@ -6,6 +6,7 @@ create table if not exists public.campaigns (
   dm_user_id text not null references public.user_profiles (clerk_user_id) on delete restrict,
   name text not null,
   system text not null default 'd&d5e',
+  tone text not null default 'heroic',
   description text,
   is_archived boolean not null default false,
   settings_json jsonb not null default '{}'::jsonb,

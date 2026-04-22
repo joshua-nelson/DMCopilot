@@ -22,18 +22,32 @@ function normalizeText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+const VALID_TONES = [
+  "heroic",
+  "gritty",
+  "dark",
+  "horror",
+  "comedic",
+  "mystery",
+  "epic",
+  "swashbuckling",
+] as const;
+
 function validateCampaignInput(input: {
   name: string;
   description?: string;
   system?: string;
+  tone?: string;
 }): ActionResult<{
   name: string;
   description: string | null;
   system: string;
+  tone: string;
 }> {
   const name = input.name.trim();
   const description = input.description?.trim() ?? "";
   const system = (input.system?.trim() || "d&d5e").trim();
+  const tone = (input.tone?.trim() || "heroic").trim();
 
   if (name.length < 2 || name.length > 80) {
     return { ok: false, error: "Campaign name must be 2–80 characters." };
@@ -44,6 +58,9 @@ function validateCampaignInput(input: {
   if (system.length < 1 || system.length > 40) {
     return { ok: false, error: "System must be 1–40 characters." };
   }
+  if (!VALID_TONES.includes(tone as (typeof VALID_TONES)[number])) {
+    return { ok: false, error: `Tone must be one of: ${VALID_TONES.join(", ")}.` };
+  }
 
   return {
     ok: true,
@@ -51,9 +68,13 @@ function validateCampaignInput(input: {
       name,
       description: description.length ? description : null,
       system,
+      tone,
     },
   };
 }
+
+const CAMPAIGN_SELECT =
+  "id, dm_user_id, name, system, tone, description, is_archived, settings_json, created_at, updated_at";
 
 export async function listCampaignsForUser(): Promise<CampaignRow[]> {
   const { userId } = await auth();
@@ -62,9 +83,7 @@ export async function listCampaignsForUser(): Promise<CampaignRow[]> {
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
     .from("campaigns")
-    .select(
-      "id, dm_user_id, name, system, description, is_archived, settings_json, created_at, updated_at",
-    )
+    .select(CAMPAIGN_SELECT)
     .eq("dm_user_id", userId)
     .order("created_at", { ascending: false });
 
@@ -81,9 +100,7 @@ export async function getCampaignForUser(
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
     .from("campaigns")
-    .select(
-      "id, dm_user_id, name, system, description, is_archived, settings_json, created_at, updated_at",
-    )
+    .select(CAMPAIGN_SELECT)
     .eq("id", campaignId)
     .eq("dm_user_id", userId)
     .maybeSingle();
@@ -96,6 +113,7 @@ export async function createCampaign(input: {
   name: string;
   description?: string;
   system?: string;
+  tone?: string;
 }): Promise<ActionResult<CampaignRow>> {
   const { userId } = await auth();
   if (!userId) redirect("/sign-in");
@@ -112,12 +130,11 @@ export async function createCampaign(input: {
       name: validated.data.name,
       description: validated.data.description,
       system: validated.data.system,
+      tone: validated.data.tone,
       created_at: now,
       updated_at: now,
     })
-    .select(
-      "id, dm_user_id, name, system, description, is_archived, settings_json, created_at, updated_at",
-    )
+    .select(CAMPAIGN_SELECT)
     .single();
 
   if (error) throw error;
@@ -128,7 +145,7 @@ export async function createCampaign(input: {
 
 export async function updateCampaign(
   campaignId: string,
-  updates: { name?: string; description?: string; system?: string },
+  updates: { name?: string; description?: string; system?: string; tone?: string },
 ): Promise<ActionResult<CampaignRow>> {
   const { userId } = await auth();
   if (!userId) redirect("/sign-in");
@@ -141,6 +158,8 @@ export async function updateCampaign(
       : undefined;
   const system =
     typeof updates.system === "string" ? updates.system.trim() : undefined;
+  const tone =
+    typeof updates.tone === "string" ? updates.tone.trim() : undefined;
 
   if (name !== undefined && (name.length < 2 || name.length > 80)) {
     return { ok: false, error: "Campaign name must be 2–80 characters." };
@@ -151,6 +170,12 @@ export async function updateCampaign(
   if (system !== undefined && (system.length < 1 || system.length > 40)) {
     return { ok: false, error: "System must be 1–40 characters." };
   }
+  if (
+    tone !== undefined &&
+    !VALID_TONES.includes(tone as (typeof VALID_TONES)[number])
+  ) {
+    return { ok: false, error: `Tone must be one of: ${VALID_TONES.join(", ")}.` };
+  }
 
   const updatePayload: Database["public"]["Tables"]["campaigns"]["Update"] = {
     updated_at: new Date().toISOString(),
@@ -159,6 +184,7 @@ export async function updateCampaign(
   if (description !== undefined)
     updatePayload.description = description.length ? description : null;
   if (system !== undefined) updatePayload.system = system;
+  if (tone !== undefined) updatePayload.tone = tone;
 
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
@@ -166,9 +192,7 @@ export async function updateCampaign(
     .update(updatePayload)
     .eq("id", campaignId)
     .eq("dm_user_id", userId)
-    .select(
-      "id, dm_user_id, name, system, description, is_archived, settings_json, created_at, updated_at",
-    )
+    .select(CAMPAIGN_SELECT)
     .maybeSingle();
 
   if (error) throw error;
@@ -196,9 +220,7 @@ export async function setCampaignArchived(
     })
     .eq("id", campaignId)
     .eq("dm_user_id", userId)
-    .select(
-      "id, dm_user_id, name, system, description, is_archived, settings_json, created_at, updated_at",
-    )
+    .select(CAMPAIGN_SELECT)
     .maybeSingle();
 
   if (error) throw error;
@@ -284,6 +306,7 @@ export async function createCampaignFormAction(
     name: normalizeText(formData.get("name")),
     description: normalizeText(formData.get("description")),
     system: normalizeText(formData.get("system")),
+    tone: normalizeText(formData.get("tone")),
   });
 
   if (!result.ok) return { error: result.error };
@@ -301,6 +324,7 @@ export async function updateCampaignFormAction(
     name: normalizeText(formData.get("name")),
     description: normalizeText(formData.get("description")),
     system: normalizeText(formData.get("system")),
+    tone: normalizeText(formData.get("tone")),
   });
 
   if (!result.ok) return { error: result.error };

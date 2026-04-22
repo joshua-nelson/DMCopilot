@@ -16,6 +16,7 @@ type Campaign = {
   id: string;
   name: string;
   system: string;
+  tone: string;
   description: string | null;
   isArchived: boolean;
 };
@@ -77,6 +78,30 @@ export function CampaignSettingsForm({ campaign }: { campaign: Campaign }) {
             defaultValue={campaign.system}
             className="h-10 w-full rounded-md border bg-background px-3 text-sm shadow-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           />
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="tone" className="text-sm font-medium">
+            Tone
+          </label>
+          <select
+            id="tone"
+            name="tone"
+            defaultValue={campaign.tone}
+            className="h-10 w-full rounded-md border bg-background px-3 text-sm shadow-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <option value="heroic">Heroic</option>
+            <option value="gritty">Gritty</option>
+            <option value="dark">Dark</option>
+            <option value="horror">Horror</option>
+            <option value="comedic">Comedic</option>
+            <option value="mystery">Mystery</option>
+            <option value="epic">Epic</option>
+            <option value="swashbuckling">Swashbuckling</option>
+          </select>
+          <p className="text-xs text-muted-foreground">
+            Sets the narrative style for AI-generated content.
+          </p>
         </div>
 
         <div className="space-y-2">

@@ -7,7 +7,6 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getUserProfileByClerkUserId } from "@/lib/user-profiles";
 import { getCampaignForUser } from "@/app/(app)/dashboard/campaigns/actions";
 import {
-  adjustCharacterHpFormAction,
   getEncounter,
   moveParticipantFormAction,
   nextTurnFormAction,
@@ -19,6 +18,7 @@ import {
   updateParticipantInitiativeFormAction,
 } from "@/app/(app)/dashboard/campaigns/[campaignId]/sessions/[sessionId]/encounters/actions";
 import { EndEncounterButton } from "@/app/(app)/dashboard/campaigns/[campaignId]/sessions/[sessionId]/encounters/_components/end-encounter-button";
+import { HpAdjustCell } from "@/app/(app)/dashboard/campaigns/[campaignId]/sessions/[sessionId]/encounters/_components/hp-adjust-cell";
 import type { Condition } from "@/app/(app)/dashboard/campaigns/[campaignId]/sessions/[sessionId]/encounters/actions";
 
 export const dynamic = "force-dynamic";
@@ -30,19 +30,6 @@ function conditionsToText(conditions: Condition[]) {
   return (conditions ?? [])
     .map((c) => (c.duration !== null ? `${c.name}:${c.duration}` : c.name))
     .join(", ");
-}
-
-function hpDisplay(
-  hp_current: number | null,
-  hp_max: number | null,
-  hp_visible: boolean,
-  temp_hp: number,
-) {
-  if (!hp_visible) return "???";
-  const cur = hp_current === null ? "—" : String(hp_current);
-  const max = hp_max === null ? "—" : String(hp_max);
-  const tempStr = temp_hp > 0 ? ` +${temp_hp}` : "";
-  return `${cur} / ${max}${tempStr}`;
 }
 
 export default async function EncounterTrackerPage({
@@ -273,33 +260,14 @@ export default async function EncounterTrackerPage({
                       {/* HP */}
                       <td className="px-3 py-2">
                         <div className="flex items-center gap-2">
-                          <form
-                            action={adjustCharacterHpFormAction.bind(
-                              null,
-                              campaignId,
-                              p.character_id,
-                              -1,
-                            )}
-                          >
-                            <Button type="submit" variant="outline">
-                              -
-                            </Button>
-                          </form>
-                          <div className="min-w-[90px] text-center font-mono text-xs">
-                            {hpDisplay(p.hp_current, p.hp_max, p.hp_visible, p.temp_hp)}
-                          </div>
-                          <form
-                            action={adjustCharacterHpFormAction.bind(
-                              null,
-                              campaignId,
-                              p.character_id,
-                              1,
-                            )}
-                          >
-                            <Button type="submit" variant="outline">
-                              +
-                            </Button>
-                          </form>
+                          <HpAdjustCell
+                            campaignId={campaignId}
+                            characterId={p.character_id}
+                            hpCurrent={p.hp_current}
+                            hpMax={p.hp_max}
+                            hpVisible={p.hp_visible}
+                            tempHp={p.temp_hp}
+                          />
                           {/* HP visibility toggle */}
                           <form
                             action={setParticipantHpVisibleFormAction.bind(
