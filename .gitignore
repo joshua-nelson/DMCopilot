@@ -45,3 +45,36 @@ next-env.d.ts
 
 # local ingest caches (do not commit source content)
 /scripts/ingest-srd/.cache/
+.opencode/skills/ui-ux-pro-max/data/charts.csv
+.opencode/skills/ui-ux-pro-max/data/colors.csv
+.opencode/skills/ui-ux-pro-max/data/icons.csv
+.opencode/skills/ui-ux-pro-max/data/landing.csv
+.opencode/skills/ui-ux-pro-max/data/products.csv
+.opencode/skills/ui-ux-pro-max/data/react-performance.csv
+.opencode/skills/ui-ux-pro-max/data/styles.csv
+.opencode/skills/ui-ux-pro-max/data/typography.csv
+.opencode/skills/ui-ux-pro-max/data/ui-reasoning.csv
+.opencode/skills/ui-ux-pro-max/data/ux-guidelines.csv
+.opencode/skills/ui-ux-pro-max/data/web-interface.csv
+.opencode/skills/ui-ux-pro-max/data/stacks/astro.csv
+.opencode/skills/ui-ux-pro-max/data/stacks/flutter.csv
+.opencode/skills/ui-ux-pro-max/data/stacks/html-tailwind.csv
+.opencode/skills/ui-ux-pro-max/data/stacks/jetpack-compose.csv
+.opencode/skills/ui-ux-pro-max/data/stacks/nextjs.csv
+.opencode/skills/ui-ux-pro-max/data/stacks/nuxt-ui.csv
+.opencode/skills/ui-ux-pro-max/data/stacks/nuxtjs.csv
+.opencode/skills/ui-ux-pro-max/data/stacks/react-native.csv
+.opencode/skills/ui-ux-pro-max/data/stacks/react.csv
+.opencode/skills/ui-ux-pro-max/data/stacks/shadcn.csv
+.opencode/skills/ui-ux-pro-max/data/stacks/svelte.csv
+.opencode/skills/ui-ux-pro-max/data/stacks/swiftui.csv
+.opencode/skills/ui-ux-pro-max/data/stacks/vue.csv
+.opencode/skills/ui-ux-pro-max/SKILL.md
+.opencode/skills/ui-ux-pro-max/scripts/core.py
+.opencode/skills/ui-ux-pro-max/scripts/design_system.py
+.opencode/skills/ui-ux-pro-max/scripts/search.py
+.opencode/skills/ui-ux-pro-max/scripts/__pycache__/core.cpython-312.pyc
+.opencode/skills/ui-ux-pro-max/scripts/__pycache__/core.cpython-314.pyc
+.opencode/skills/ui-ux-pro-max/scripts/__pycache__/design_system.cpython-312.pyc
+.opencode/skills/ui-ux-pro-max/scripts/__pycache__/design_system.cpython-314.pyc
+.opencode/skills/ui-ux-pro-max/scripts/__pycache__/search.cpython-314.pyc
